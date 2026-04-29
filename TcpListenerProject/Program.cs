@@ -33,6 +33,7 @@ namespace TcpListenerProject
             server = new TcpListener(ipAddress, port);
 
             Console.Write("Starting server...\n");
+            
             server.Start();
 
             Console.Write("Waiting for a connection... \n");
@@ -45,66 +46,12 @@ namespace TcpListenerProject
                     _ = HandleClientAsync(client);
                 }
             }
-            catch (SocketException e)
-            {
+            catch (SocketException e){
                 Console.WriteLine("\n Socket exception: {0}", e.Message);
             }
             finally{
                 server.Stop();
             }
-            
-            /*
-            try
-            {
-                while (true)
-                {
-                    TcpClient client = await server.AcceptTcpClient();
-                    Console.WriteLine("Connected!");
-
-                    NetworkStream stream = client.GetStream();
-
-                    Byte[] bytes = new Byte[2048];
-
-                    int bytesRead = stream.Read(bytes);
-
-                    while (client.Connected && bytesRead != 0)
-                    {
-                        
-                        data = System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRead);
-                        Console.WriteLine("Received {0}", data);
-
-                        // send response
-                        string responseMsg = "01";
-                        bytes = System.Text.Encoding.ASCII.GetBytes(responseMsg);
-                        stream.Write(bytes, 0, bytes.Length);
-                        Console.WriteLine("Sent: {0}", responseMsg);
-                    }
-                    // Loop to receive all the data sent by the client.
-                    /*while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
-                    {
-                        // Translate data bytes to a ASCII string
-                        data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-                        Console.WriteLine("Received {0}", data);
-
-                        // Process the data sent by the client
-                        data = data.ToUpper();
-
-                        byte[] msg = System.Text.Encoding.ASCII.GetBytes(data);
-
-                        // Send back a response
-                        stream.Write(msg, 0, msg.Length);
-                        Console.WriteLine("Sent: {0}", data);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("SocketException: {0}", e);
-            }
-            finally
-            {
-                server.Stop();
-            }*/
 
             Console.WriteLine("\nHit enter to continue...");
             Console.Read();
@@ -124,12 +71,18 @@ namespace TcpListenerProject
                     {
                         int bytesRead = await stream.ReadAsync(bytes);
 
-                        if (bytesRead == 0) break; // client disconnect
+                        if (bytesRead == 0) // client disconnect
+                        {
+                            Console.WriteLine("\nDisconnected");
+                            break; 
+                        }
+
+                        
 
                         string data = System.Text.Encoding.ASCII.GetString(bytes, 0, bytesRead);
                         Console.WriteLine("\n Received {0}", data);
 
-                        // send response
+                        // send back acknowledgement
                         string responseMsg = "01";
                         byte[] resp = System.Text.Encoding.ASCII.GetBytes(responseMsg);
                         await stream.WriteAsync(resp, 0, resp.Length);

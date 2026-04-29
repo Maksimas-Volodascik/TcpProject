@@ -1,63 +1,80 @@
 ﻿using System.Configuration;
+using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TcpClientProject
 {
     class Program
     {
-        public static void Main(string[] args)
+        public static TcpClient client = new TcpClient();
+        public static NetworkStream stream;
+        public static async Task Main(string[] args)
         {
-            //Connect("magic");
-            IPAddress ip;
-            if(!IPAddress.TryParse(ConfigurationManager.AppSettings["ipAddress"], out ip))
-            {
-                Console.WriteLine("Error parsing IP address");
-                ip = IPAddress.Any;
-            }
+            Connect();
 
-            Console.WriteLine(ip);
+            while (true)
+            {
+                string? message = Console.ReadLine();
+
+                if (string.IsNullOrEmpty(message) || message.ToLower().Equals("quit")) break;
+
+                await Send(message);
+            }
         }
 
-        public static void Connect(String message)
+        public static async Task Connect()
         {
+            string server = "127.0.0.1";
+            Int32 port = 13000;
+
+            await client.Client.ConnectAsync(server, port);
+
+            stream = client.GetStream();
+
+            Console.WriteLine("Connected.");
+
+            _ = Task.Run(ReceiveAsync);
+        }
+
+        public static async Task Send(string message)
+        {
+            byte[] sendData = System.Text.Encoding.ASCII.GetBytes(message); //to UTF8 to support non-ascii chars
+
+            stream.Write(sendData, 0, sendData.Length);
+
+            Console.WriteLine("Sent: {0}", message);
+        }
+
+        public static async Task ReceiveAsync()
+        {
+            byte[] receiveData = new Byte[256];
+            string responseData = string.Empty;
+
             try
             {
-                String server = "127.0.0.1";
-                Int32 port = 13000;
+                while (true)
+                {
+                    Int32 bytes = stream.Read(receiveData, 0, receiveData.Length);
 
-                using TcpClient client = new TcpClient(server, port);
+                    if (bytes == 0)
+                    {
+                        Console.WriteLine("Connection closed");
+                        break;
+                    }
 
-                // Convert message to ASCII and store it as Byte Array
-                Byte[] data = System.Text.Encoding.ASCII.GetBytes(message); //to UTF8 to support non-ascii chars
+                    responseData = System.Text.Encoding.ASCII.GetString(receiveData, 0, bytes);
 
-                // Get a client stream for reading and writing.
-                NetworkStream stream = client.GetStream();
-
-                // Send message
-                stream.Write(data, 0, data.Length);
-
-                Console.WriteLine("Sent: {0}", message);
-
-                // Receive the response
-                data = new Byte[256];
-
-                String responseData = String.Empty;
-
-                // Read the first batch of the TcpServer response bytes
-                Int32 bytes = stream.Read(data, 0, data.Length);
-                responseData = System.Text.Encoding.ASCII.GetString(data, 0, bytes);
-                Console.WriteLine("Received: {0}", responseData);
-
+                    Console.WriteLine("Received: {0}", responseData);
+                }
             }
-            catch (ArgumentNullException e)
+            catch (Exception e)
             {
-                Console.WriteLine("ArgumentNullException: {0}", e);
+                Console.WriteLine("Error occurred while receiving data.");
+                throw;
             }
-            catch (SocketException e)
-            {
-                Console.WriteLine("SocketException: {0}", e);
-            }
+            
         }
     }
 }
