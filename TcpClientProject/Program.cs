@@ -18,7 +18,7 @@ namespace TcpClientProject
             {
                 string? message = Console.ReadLine();
 
-                if (string.IsNullOrEmpty(message) || message.ToLower().Equals("quit")) break;
+                if (string.IsNullOrEmpty(message)) break;
 
                 await Send(message);
             }
@@ -40,7 +40,7 @@ namespace TcpClientProject
 
         public static async Task Send(string message)
         {
-            byte[] sendData = System.Text.Encoding.ASCII.GetBytes(message); //to UTF8 to support non-ascii chars
+            byte[] sendData = System.Text.Encoding.UTF8.GetBytes(message);
 
             stream.Write(sendData, 0, sendData.Length);
 
@@ -64,7 +64,7 @@ namespace TcpClientProject
                         break;
                     }
 
-                    responseData = System.Text.Encoding.ASCII.GetString(receiveData, 0, bytes);
+                    responseData = System.Text.Encoding.UTF8.GetString(receiveData, 0, bytes);
 
                     Console.WriteLine("Received: {0}", responseData);
                 }
