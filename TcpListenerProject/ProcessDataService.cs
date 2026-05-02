@@ -16,11 +16,53 @@ namespace TcpListenerProject
             _context = context;
         }
 
-        public async Task<Device> GetDeviceByImeiAsync(string imei)
+        public async Task<Device?> GetDeviceByImeiAsync(string imei)
         {
-            var device = _context.Set<Device>().FirstOrDefaultAsync(e => e.Imei.Equals(imei));
+            if (string.IsNullOrWhiteSpace(imei))
+            {
+                throw new ArgumentException("IMEI cannot be null, empty, or whitespace.");
+            }
+            
+            var device = await _context.Set<Device>().FirstOrDefaultAsync(e => e.Imei == imei);
 
-            return await device;
+            if (device == null)
+            {
+                throw new ArgumentException("Device is not registered on the database");
+            }
+
+            return device;
+        }
+
+        public async Task<string?> SaveRawRecordAsync(string imei, string rawMessage)
+        {
+            if (string.IsNullOrWhiteSpace(imei))
+                return null;
+
+            if (string.IsNullOrWhiteSpace(rawMessage))
+                return null;
+
+            Device? device = await GetDeviceByImeiAsync(imei);
+            if (device is null)
+                return null;
+
+            var record = new RawRecord
+            {
+                RawData = rawMessage,
+                ReceivedAt = DateTimeOffset.UtcNow,
+                ExpiresAt = DateTimeOffset.UtcNow.AddYears(1),   // expires 1 year from now
+                DeviceId = device.Id
+            };
+
+            try
+            {
+                _context.Set<RawRecord>().Add(record);
+                await _context.SaveChangesAsync();
+                return rawMessage; 
+            }
+            catch
+            {
+                return null;   
+            }
         }
     }
 }

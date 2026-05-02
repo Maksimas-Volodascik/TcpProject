@@ -66,33 +66,44 @@ namespace TcpListenerProject
         public async Task HandleClientAsync(TcpClient client)
         {
             using var scope = _scopeFactory.CreateScope();
-            var service = scope.ServiceProvider.GetRequiredService<IProcessDataService>();
+            var processDataService = scope.ServiceProvider.GetRequiredService<IProcessDataService>();
             
             try
             {
-                var stream = client.GetStream();
-                using var reader = new StreamReader(stream);
-                byte[] bytes = new Byte[2048];
+                var networkStream = client.GetStream();
+                byte[] buffer = new Byte[2048];
 
-                int imeiBytes = await stream.ReadAsync(bytes);
-                Console.WriteLine(imeiBytes);
-                if (imeiBytes == 0) // client disconnect
+                int imeiByteCount = await networkStream.ReadAsync(buffer);
+
+                if (imeiByteCount == 0) // client disconnect
                 {
                     Console.WriteLine("\nDisconnected");
                     return;
                 }
 
-                string imeiString = System.Text.Encoding.UTF8.GetString(bytes, 0, imeiBytes);
-                Console.WriteLine("\n{0} Connecting...", imeiString);
+                string imei = System.Text.Encoding.UTF8.GetString(buffer, 0, imeiByteCount);
 
-                string imeiAck = "01";
-                byte[] imeiResponse = System.Text.Encoding.UTF8.GetBytes(imeiAck);
-                await stream.WriteAsync(imeiResponse, 0, imeiResponse.Length);
-                Console.WriteLine("{0} Connection established", imeiString);
+                Console.WriteLine("\n{0} Connecting...", imei);
+
+                try
+                {
+                    await processDataService.GetDeviceByImeiAsync(imei);
+                }
+                catch (ArgumentException ex)
+                {
+                    Console.WriteLine(ex.Message);
+                    return;
+                }
+
+                string imeiAcknowledgement = "01";
+                byte[] imeiResponse = System.Text.Encoding.UTF8.GetBytes(imeiAcknowledgement);
+                await networkStream.WriteAsync(imeiResponse, 0, imeiResponse.Length);
+
+                Console.WriteLine("{0} Connection established", imei);
 
                 while (true)
                 {
-                    int bytesRead = await stream.ReadAsync(bytes);
+                    int bytesRead = await networkStream.ReadAsync(buffer);
 
                     if (bytesRead == 0) // client disconnect
                     {
@@ -100,13 +111,15 @@ namespace TcpListenerProject
                         break;
                     }
 
-                    string data = System.Text.Encoding.UTF8.GetString(bytes, 0, bytesRead);
-                    Console.WriteLine("\n Received {0}", data);
+                    string data = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    await processDataService.SaveRawRecordAsync(imei, data);
 
+                    Console.WriteLine("\n Received {0}", data);
+                    
                     // send back acknowledgement
                     string responseMsg = "01";
-                    byte[] resp = System.Text.Encoding.UTF8.GetBytes(responseMsg);
-                    await stream.WriteAsync(resp, 0, resp.Length);
+                    byte[] acknowledgementBytes = System.Text.Encoding.UTF8.GetBytes(responseMsg);
+                    await networkStream.WriteAsync(acknowledgementBytes, 0, acknowledgementBytes.Length);
                     Console.WriteLine("\n Sent: {0} \n", responseMsg);
                 }
             }
