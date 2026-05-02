@@ -12,6 +12,7 @@ namespace TcpListenerProject
     public class DataContext : DbContext
     {
         public DbSet<RawRecord> RawRecords { get; set; }
+        public DbSet<Device> Devices { get; set; }
 
         public DataContext(DbContextOptions<DataContext> options) : base(options){}
     }

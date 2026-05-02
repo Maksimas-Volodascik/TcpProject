@@ -19,7 +19,7 @@ namespace TcpListenerProject
 
             builder.Services.AddNpgsql<DataContext>(System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
 
-            builder.Services.AddScoped<ProcessDataService>();
+            builder.Services.AddScoped<IProcessDataService, ProcessDataService>();
             builder.Services.AddSingleton<TcpServer>();
 
             var host = builder.Build();

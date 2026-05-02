@@ -2,7 +2,6 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TcpClientProject
 {
@@ -12,7 +11,7 @@ namespace TcpClientProject
         public static NetworkStream stream;
         public static async Task Main(string[] args)
         {
-            Connect();
+            Connect("123456789123456");
 
             while (true)
             {
@@ -24,7 +23,7 @@ namespace TcpClientProject
             }
         }
 
-        public static async Task Connect()
+        public static async Task Connect(string deviceImei)
         {
             string server = "127.0.0.1";
             Int32 port = 13000;
@@ -32,6 +31,19 @@ namespace TcpClientProject
             await client.Client.ConnectAsync(server, port);
 
             stream = client.GetStream();
+
+            //Send IMEI
+            byte[] sendData = System.Text.Encoding.UTF8.GetBytes(deviceImei);
+            stream.Write(sendData, 0, sendData.Length);
+            //Receive ACK
+            byte[] receiveData = new Byte[256];
+            int bytes = stream.Read(receiveData, 0, receiveData.Length);
+
+            if (bytes == 0)
+            {
+                Console.WriteLine("Connection closed");
+                return;
+            }
 
             Console.WriteLine("Connected.");
 

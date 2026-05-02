@@ -66,16 +66,29 @@ namespace TcpListenerProject
         public async Task HandleClientAsync(TcpClient client)
         {
             using var scope = _scopeFactory.CreateScope();
-            var service = scope.ServiceProvider.GetRequiredService<ProcessDataService>();
-
+            var service = scope.ServiceProvider.GetRequiredService<IProcessDataService>();
+            
             try
             {
-                Console.WriteLine("Connected! {0}", client.Client.RemoteEndPoint);
-
                 var stream = client.GetStream();
                 using var reader = new StreamReader(stream);
-
                 byte[] bytes = new Byte[2048];
+
+                int imeiBytes = await stream.ReadAsync(bytes);
+                Console.WriteLine(imeiBytes);
+                if (imeiBytes == 0) // client disconnect
+                {
+                    Console.WriteLine("\nDisconnected");
+                    return;
+                }
+
+                string imeiString = System.Text.Encoding.UTF8.GetString(bytes, 0, imeiBytes);
+                Console.WriteLine("\n{0} Connecting...", imeiString);
+
+                string imeiAck = "01";
+                byte[] imeiResponse = System.Text.Encoding.UTF8.GetBytes(imeiAck);
+                await stream.WriteAsync(imeiResponse, 0, imeiResponse.Length);
+                Console.WriteLine("{0} Connection established", imeiString);
 
                 while (true)
                 {
