@@ -36,7 +36,7 @@ namespace TcpClientProject
                 {
                     Console.WriteLine("Connecting...");
                     await client.ConnectAsync(server, port);
-                    Console.WriteLine("Connected");
+                    Console.WriteLine("Connected\n");
                     break;
                 }
                 catch (SocketException)
@@ -55,6 +55,7 @@ namespace TcpClientProject
             //Send IMEI
             byte[] sendData = System.Text.Encoding.UTF8.GetBytes(deviceImei);
             stream.Write(sendData, 0, sendData.Length);
+            Console.WriteLine("Sending IMEI...");
             //Receive ACK
             byte[] receiveData = new Byte[256];
             int bytes = stream.Read(receiveData, 0, receiveData.Length);
@@ -65,7 +66,7 @@ namespace TcpClientProject
                 return;
             }
 
-            Console.WriteLine("Handshake complete.");
+            Console.WriteLine("Handshake complete.\n");
 
             _ = Task.Run(ReceiveAsync);
         }

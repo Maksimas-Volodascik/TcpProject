@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using TcpListenerProject.TeltonikaDataParser.Header;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TcpListenerProject
@@ -20,6 +21,7 @@ namespace TcpListenerProject
             builder.Services.AddNpgsql<DataContext>(System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
 
             builder.Services.AddScoped<IProcessDataService, ProcessDataService>();
+            builder.Services.AddScoped<IFrameParser, FrameParser>();
             builder.Services.AddSingleton<TcpServer>();
 
             var host = builder.Build();

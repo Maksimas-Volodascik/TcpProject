@@ -7,15 +7,18 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using TcpListenerProject.TeltonikaDataParser.Header;
 
 namespace TcpListenerProject
 {
     public class TcpServer
     {
         private readonly IServiceScopeFactory _scopeFactory;
-        public TcpServer(IServiceScopeFactory scopeFactory)
+        private readonly IFrameParser _frameParser;
+        public TcpServer(IServiceScopeFactory scopeFactory, IFrameParser frameParser)
         {
             _scopeFactory = scopeFactory;
+            _frameParser = frameParser;
         }
 
         public async Task ServerListener()
@@ -112,9 +115,10 @@ namespace TcpListenerProject
                     }
 
                     string data = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    await processDataService.SaveRawRecordAsync(imei, data);
-
+                    //await processDataService.SaveRawRecordAsync(imei, data);
+                    var header = _frameParser.Parse(Convert.FromHexString(data));
                     Console.WriteLine("\n Received {0}", data);
+                    Console.WriteLine("\n Parsed: {0}", header.Header.CodecID);
                     
                     // send back acknowledgement
                     string responseMsg = "01";

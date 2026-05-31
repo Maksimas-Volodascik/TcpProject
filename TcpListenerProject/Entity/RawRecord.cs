@@ -15,6 +15,9 @@ namespace TcpListenerProject.Entity
 
         [MaxLength(1500)]
         public string RawData { get; set; } = string.Empty;
+        [MaxLength(1500)]
+        public string ParsedData { get; set; } = string.Empty;
+
         public DateTimeOffset ReceivedAt { get; set; } = DateTimeOffset.UtcNow;
         public DateTimeOffset ExpiresAt { get; set; } = DateTimeOffset.UtcNow.AddDays(7);
         public Guid DeviceId { get; set; }
