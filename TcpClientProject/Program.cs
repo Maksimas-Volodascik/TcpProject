@@ -11,7 +11,7 @@ namespace TcpClientProject
         public static NetworkStream stream;
         public static async Task Main(string[] args)
         {
-            Connect("123456789123456");
+            Connect("111118745896589");
 
             while (true)
             {
@@ -27,8 +27,28 @@ namespace TcpClientProject
         {
             string server = "127.0.0.1";
             Int32 port = 13000;
+            int maxRetries = 5; 
+            int waitTimer = 1000; //ms
 
-            await client.Client.ConnectAsync(server, port);
+            while (maxRetries > 0)
+            {
+                try
+                {
+                    Console.WriteLine("Connecting...");
+                    await client.ConnectAsync(server, port);
+                    Console.WriteLine("Connected");
+                    break;
+                }
+                catch (SocketException)
+                {
+                    Console.WriteLine("Server is unreachable \n");
+                }
+                maxRetries--;
+                if (maxRetries > 0)
+                {
+                    await Task.Delay(waitTimer);
+                }
+            }  
 
             stream = client.GetStream();
 
@@ -45,7 +65,7 @@ namespace TcpClientProject
                 return;
             }
 
-            Console.WriteLine("Connected.");
+            Console.WriteLine("Handshake complete.");
 
             _ = Task.Run(ReceiveAsync);
         }
