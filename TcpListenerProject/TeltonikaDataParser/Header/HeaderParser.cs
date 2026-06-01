@@ -6,15 +6,15 @@ using System.Threading.Tasks;
 
 namespace TcpListenerProject.TeltonikaDataParser.Header
 {
-    public class FrameParser : IFrameParser
+    public class HeaderParser : IHeaderParser
     {
-        public FrameResult Parse(byte[] rawMessage)
+        public HeaderResult Parse(byte[] rawMessage)
         {
             var recordSize = BitConverter.ToInt32(rawMessage, 4);
             var codecId = (Codec)rawMessage[8];
             var numberOfRecords = rawMessage[9];
 
-            return new FrameResult
+            return new HeaderResult
             {
                 Header = new ProtocolHeader
                 {

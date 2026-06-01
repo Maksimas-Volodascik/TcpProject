@@ -6,9 +6,8 @@ using System.Threading.Tasks;
 
 namespace TcpListenerProject.TeltonikaDataParser.Header
 {
-    public class FrameResult
+    public interface IHeaderParser
     {
-        public ProtocolHeader Header { get; set; }
-        public byte[] Body { get; set; }
+        HeaderResult Parse(byte[] rawMessage);
     }
 }
