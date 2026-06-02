@@ -11,21 +11,21 @@ namespace TcpListenerProject.TeltonikaDataParser
 {
     public class TeltonikaParser : ITeltonikaParser
     {
-        private readonly IHeaderParser _headerParser;
+        private readonly IPacketParser _packetParser;
         private readonly IDecoderFactory _decoderFactory;
-        public TeltonikaParser(IHeaderParser headerParser, IDecoderFactory decoderFactory)
+        public TeltonikaParser(IPacketParser packetParser, IDecoderFactory decoderFactory)
         {
-            _headerParser = headerParser;
+            _packetParser = packetParser;
             _decoderFactory = decoderFactory;
 
         }
-        public JsonResult Parse(byte[] rawMessage)
+        public AvlRecord Parse(byte[] rawMessage)
         {
-            var header = _headerParser.Parse(rawMessage);
+            var packet = _packetParser.Parse(rawMessage);
 
-            IDecoder decoder = _decoderFactory.Create(header.Header.CodecID);
+            IDecoder decoder = _decoderFactory.Create(packet.Header.CodecID);
 
-            return decoder.Parse(rawMessage);
+            return decoder.Parse(packet);
         }
     }
 }

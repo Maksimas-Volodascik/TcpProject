@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TcpListenerProject.TeltonikaDataParser.Header;
 
 namespace TcpListenerProject.TeltonikaDataParser.Decoder
 {
@@ -10,7 +11,7 @@ namespace TcpListenerProject.TeltonikaDataParser.Decoder
     {
         public Codec Codec => Codec.Codec8E;
 
-        public JsonResult Parse(byte[] rawMessage)
+        public AvlRecord Parse(PacketResult packet)
         {
             throw new NotImplementedException();
         }

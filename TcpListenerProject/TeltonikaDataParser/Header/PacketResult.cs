@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TcpListenerProject.TeltonikaDataParser.Header
 {
-    public class HeaderResult
+    public class PacketResult
     {
         public ProtocolHeader Header { get; set; }
         public byte[] Body { get; set; }

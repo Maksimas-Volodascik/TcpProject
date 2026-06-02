@@ -103,7 +103,7 @@ namespace TcpListenerProject
                 byte[] imeiResponse = System.Text.Encoding.UTF8.GetBytes(imeiAcknowledgement);
                 await networkStream.WriteAsync(imeiResponse, 0, imeiResponse.Length);
 
-                Console.WriteLine("{0} Connection established", imei);
+                Console.WriteLine("{0} Connection established\n", imei);
 
                 while (true)
                 {
@@ -117,8 +117,9 @@ namespace TcpListenerProject
 
                     string data = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
                     //await processDataService.SaveRawRecordAsync(imei, data);
-                    //var header = _frameParser.Parse(Convert.FromHexString(data));
-
+                    
+                    _teltonikaParser.Parse(Convert.FromHexString(data));
+                            
 
                     Console.WriteLine("\n Received {0}", data);
                     //Console.WriteLine("\n Parsed: {0}", header.Header.CodecID);

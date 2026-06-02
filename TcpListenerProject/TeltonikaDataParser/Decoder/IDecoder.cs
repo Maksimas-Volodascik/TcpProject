@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TcpListenerProject.TeltonikaDataParser.Header;
 
 namespace TcpListenerProject.TeltonikaDataParser.Decoder
 {
     public interface IDecoder
     {
         public Codec Codec { get; }
-        public JsonResult Parse(byte[] rawMessage);
+        public AvlRecord Parse(PacketResult packet);
     }
 }

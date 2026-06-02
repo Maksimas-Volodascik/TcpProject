@@ -23,7 +23,7 @@ namespace TcpListenerProject
             builder.Services.AddNpgsql<DataContext>(System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
 
             builder.Services.AddScoped<IProcessDataService, ProcessDataService>();
-            builder.Services.AddScoped<IHeaderParser, HeaderParser>();
+            builder.Services.AddScoped<IPacketParser, PacketParser>();
             builder.Services.AddScoped<IDecoderFactory, DecoderFactory>();
             builder.Services.AddScoped<ITeltonikaParser, TeltonikaParser>();
             builder.Services.AddScoped<IDecoder, Codec8Parser>();
