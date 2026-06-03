@@ -21,6 +21,7 @@ namespace TcpListenerProject.TeltonikaDataParser.Decoder
             var result = new byte[size];
 
             Array.Copy(_data, _offset, result, 0, size);
+            Array.Reverse(result);
 
             _offset += size;
 

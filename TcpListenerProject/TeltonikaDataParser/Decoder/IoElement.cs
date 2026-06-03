@@ -11,13 +11,13 @@ namespace TcpListenerProject.TeltonikaDataParser.Decoder
         public IoGroup<byte> N1 { get; set; } = new();
         public IoGroup<ushort> N2 { get; set; } = new();
         public IoGroup<uint> N4 { get; set; } = new(); 
-        public IoGroup<ulong> N8 { get; set; } = new();  
+        public IoGroup<ulong> N8 { get; set; } = new();
     }
 
     public class IoGroup<T>
     {
         public int Count { get; set; }
-        public List<IoPair<T>> Items { get; set; }
+        public List<IoPair<T>> Items { get; set; } = new();
     }
 
     public class IoPair<T>
