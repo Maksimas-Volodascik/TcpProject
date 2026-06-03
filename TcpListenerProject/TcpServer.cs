@@ -7,8 +7,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
-using TcpListenerProject.TeltonikaDataParser.Header;
 using TcpListenerProject.TeltonikaDataParser;
+using TcpListenerProject.TeltonikaDataParser.Interfaces;
 
 namespace TcpListenerProject
 {

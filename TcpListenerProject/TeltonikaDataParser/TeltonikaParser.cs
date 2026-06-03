@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TcpListenerProject.TeltonikaDataParser.Decoder;
-using TcpListenerProject.TeltonikaDataParser.Header;
+using TcpListenerProject.TeltonikaDataParser.Interfaces;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TcpListenerProject.TeltonikaDataParser
@@ -19,7 +19,7 @@ namespace TcpListenerProject.TeltonikaDataParser
             _decoderFactory = decoderFactory;
 
         }
-        public AvlRecord Parse(byte[] rawMessage)
+        public Elements Parse(byte[] rawMessage)
         {
             var packet = _packetParser.Parse(rawMessage);
 

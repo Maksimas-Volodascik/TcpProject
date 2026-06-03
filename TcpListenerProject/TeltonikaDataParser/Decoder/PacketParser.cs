@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TcpListenerProject.TeltonikaDataParser.Interfaces;
+using TcpListenerProject.TeltonikaDataParser.Protocol;
 
-namespace TcpListenerProject.TeltonikaDataParser.Header
+namespace TcpListenerProject.TeltonikaDataParser.Decoder
 {
     public class PacketParser : IPacketParser
     {

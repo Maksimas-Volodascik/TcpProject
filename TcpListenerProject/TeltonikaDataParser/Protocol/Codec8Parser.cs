@@ -5,17 +5,18 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using TcpListenerProject.TeltonikaDataParser.Header;
+using TcpListenerProject.TeltonikaDataParser.Decoder;
+using TcpListenerProject.TeltonikaDataParser.Interfaces;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace TcpListenerProject.TeltonikaDataParser.Decoder
+namespace TcpListenerProject.TeltonikaDataParser.Protocol
 {
     public class Codec8Parser : IDecoder
     {
         public DataReader _parser;
         public Codec Codec => Codec.Codec8;
 
-        public AvlRecord Parse(PacketResult packet)
+        public Elements Parse(PacketResult packet)
         {
             _parser = new DataReader(packet.Body);
             GpsElement GpsElements = new GpsElement();
@@ -46,7 +47,7 @@ namespace TcpListenerProject.TeltonikaDataParser.Decoder
                 ioElement = ParseIoElements();
             }
 
-            var rec = new AvlRecord
+            var rec = new Elements
             {
                 Header = packet.Header,
                 GpsElements = GpsElements,

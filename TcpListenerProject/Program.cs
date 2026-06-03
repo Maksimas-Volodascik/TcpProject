@@ -9,7 +9,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TcpListenerProject.TeltonikaDataParser;
 using TcpListenerProject.TeltonikaDataParser.Decoder;
-using TcpListenerProject.TeltonikaDataParser.Header;
+using TcpListenerProject.TeltonikaDataParser.Interfaces;
+using TcpListenerProject.TeltonikaDataParser.Protocol;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TcpListenerProject

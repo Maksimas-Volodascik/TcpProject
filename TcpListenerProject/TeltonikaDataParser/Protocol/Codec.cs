@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TcpListenerProject.TeltonikaDataParser
+namespace TcpListenerProject.TeltonikaDataParser.Protocol
 {
     public enum Codec
     {
