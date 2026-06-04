@@ -31,6 +31,7 @@ namespace TcpListenerProject.TeltonikaDataParser.Decoder
         public IoGroup<ushort> N2 { get; set; } = new();
         public IoGroup<uint> N4 { get; set; } = new();
         public IoGroup<ulong> N8 { get; set; } = new();
+        public IoGroup<int?> NX { get; set; } = new();
     }
 
     public class IoGroup<T>

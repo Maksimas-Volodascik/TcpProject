@@ -16,7 +16,7 @@ namespace TcpListenerProject.TeltonikaDataParser.Decoder
             _offset = 0;
         }
 
-        public byte[] ReadData (int size)
+        public byte[] ReadData(int size)
         {
             var result = new byte[size];
 

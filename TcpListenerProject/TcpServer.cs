@@ -1,14 +1,15 @@
-﻿using System.Configuration;
+﻿using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
-using Microsoft.Extensions.DependencyInjection;
 using TcpListenerProject.TeltonikaDataParser;
 using TcpListenerProject.TeltonikaDataParser.Interfaces;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TcpListenerProject
 {

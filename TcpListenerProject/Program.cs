@@ -19,6 +19,8 @@ namespace TcpListenerProject
     {
         public static async Task Main(string[] args)
         {
+
+
             var builder = Host.CreateApplicationBuilder();
 
             builder.Services.AddNpgsql<DataContext>(System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);

@@ -78,6 +78,7 @@ namespace TcpListenerProject.TeltonikaDataParser.Protocol
             }
 
             ioElement.N2.Count = _parser.ReadData(1)[0];
+
             for (int i = 0; i < ioElement.N2.Count; i++)
             {
                 ioElement.N2.Items.Add(new IoPair<ushort>
