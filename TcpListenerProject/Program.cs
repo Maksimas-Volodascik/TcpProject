@@ -19,8 +19,6 @@ namespace TcpListenerProject
     {
         public static async Task Main(string[] args)
         {
-
-
             var builder = Host.CreateApplicationBuilder();
 
             builder.Services.AddNpgsql<DataContext>(System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
@@ -33,6 +31,8 @@ namespace TcpListenerProject
             builder.Services.AddScoped<IDecoder, Codec8EParser>();
 
             builder.Services.AddSingleton<TcpServer>();
+
+            builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command",LogLevel.Warning);
 
             var host = builder.Build();
 

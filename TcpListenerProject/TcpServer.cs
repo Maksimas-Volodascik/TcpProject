@@ -40,33 +40,33 @@ namespace TcpListenerProject
                 port = 13000;
             }
 
-            server = new TcpListener(ipAddress, port);
-
-            Console.Write("Starting server...\n");
-
-            server.Start();
-
-            Console.Write("Waiting for a connection... \n");
-            try
+            while (true)
             {
-                while (true)
+                try
                 {
-                    TcpClient client = await server.AcceptTcpClientAsync();
+                    server = new TcpListener(ipAddress, port);
 
-                    _ = HandleClientAsync(client);
+                    Console.Write("Starting server...\n");
+
+                    server.Start();
+
+                    Console.Write("Waiting for a connection... \n");
+
+                    while (true)
+                    {
+                        TcpClient client = await server.AcceptTcpClientAsync();
+
+                        _ = HandleClientAsync(client);
+                    }
                 }
-            }
-            catch (SocketException e)
-            {
-                Console.WriteLine("\n Socket exception: {0}", e.Message);
-            }
-            finally
-            {
-                server.Stop();
-            }
+                catch (Exception e)
+                {
+                    Console.WriteLine("\n Socket exception: {0}", e.Message);
 
-            Console.WriteLine("\nHit enter to continue...");
-            Console.Read();
+                }
+
+                await Task.Delay(TimeSpan.FromSeconds(5));
+            }
         }
 
         public async Task HandleClientAsync(TcpClient client)
