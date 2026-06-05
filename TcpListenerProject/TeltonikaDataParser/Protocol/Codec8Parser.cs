@@ -54,11 +54,6 @@ namespace TcpListenerProject.TeltonikaDataParser.Protocol
                 IoElements = ioElement
             };
 
-            string json = JsonSerializer.Serialize(rec, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
-            Console.WriteLine(json);
             return rec;
         }
 

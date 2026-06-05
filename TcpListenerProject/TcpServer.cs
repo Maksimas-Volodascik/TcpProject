@@ -6,6 +6,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using TcpListenerProject.TeltonikaDataParser;
 using TcpListenerProject.TeltonikaDataParser.Interfaces;
@@ -116,14 +117,13 @@ namespace TcpListenerProject
                         break;
                     }
 
-                    string data = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    //await processDataService.SaveRawRecordAsync(imei, data);
-                    
-                    _teltonikaParser.Parse(Convert.FromHexString(data));
-                            
+                    string rawData = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    var parsedData = _teltonikaParser.Parse(Convert.FromHexString(rawData));
+                    var jsonData = JsonSerializer.Serialize(parsedData);
 
-                    Console.WriteLine("\n Received {0}", data);
-                    //Console.WriteLine("\n Parsed: {0}", header.Header.CodecID);
+                    await processDataService.SaveRawRecordAsync(imei, rawData, jsonData); //save to DB
+
+                    Console.WriteLine("\n Received {0}", rawData);
                     
                     // send back acknowledgement
                     string responseMsg = "01";

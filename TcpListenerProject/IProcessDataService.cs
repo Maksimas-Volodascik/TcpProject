@@ -10,6 +10,6 @@ namespace TcpListenerProject
     public interface IProcessDataService
     {
         Task<Device?> GetDeviceByImeiAsync(string imei);
-        Task<string?> SaveRawRecordAsync(string imei, string rawMessage);
+        Task<string?> SaveRawRecordAsync(string imei, string rawMessage, string? parsedMessage);
     }
 }

@@ -33,13 +33,16 @@ namespace TcpListenerProject
             return device;
         }
 
-        public async Task<string?> SaveRawRecordAsync(string imei, string rawMessage)
+        public async Task<string?> SaveRawRecordAsync(string imei, string rawMessage, string? parsedMessage)
         {
             if (string.IsNullOrWhiteSpace(imei))
                 return null;
 
             if (string.IsNullOrWhiteSpace(rawMessage))
                 return null;
+
+            if (string.IsNullOrEmpty(parsedMessage))
+                parsedMessage = "{}";
 
             Device? device = await GetDeviceByImeiAsync(imei);
             if (device is null)
@@ -48,6 +51,7 @@ namespace TcpListenerProject
             var record = new RawRecord
             {
                 RawData = rawMessage,
+                ParsedData = parsedMessage,
                 ReceivedAt = DateTimeOffset.UtcNow,
                 ExpiresAt = DateTimeOffset.UtcNow.AddYears(1),   // expires 1 year from now
                 DeviceId = device.Id

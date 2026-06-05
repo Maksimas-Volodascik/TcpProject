@@ -52,9 +52,6 @@ namespace TcpListenerProject.TeltonikaDataParser.Protocol
                 IoElements = ioElement
             };
 
-            var json = JsonSerializer.Serialize(rec);
-
-            Console.WriteLine(json);
             return rec;
         }
 
@@ -73,7 +70,6 @@ namespace TcpListenerProject.TeltonikaDataParser.Protocol
             }
 
             ioElement.N2.Count = BitConverter.ToUInt16(_parser.ReadData(2));
-            Console.WriteLine("N2 Count {0}", ioElement.N2.Count);
 
             for (int i = 0; i < ioElement.N2.Count; i++)
             {
