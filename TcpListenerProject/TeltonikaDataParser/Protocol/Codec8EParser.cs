@@ -14,107 +14,82 @@ namespace TcpListenerProject.TeltonikaDataParser.Protocol
         public DataReader _parser;
         public Codec Codec => Codec.Codec8E;
 
-        public Elements Parse(PacketResult packet)
+        public Dictionary<string, object?> Parse(PacketResult packet)
         {
+            Dictionary<string, object?> record = new Dictionary<string, object?>();
             _parser = new DataReader(packet.Body);
-            GpsElement GpsElements = new GpsElement();
 
             if (packet.Body.Length < 35) //minimum record 35 (without header)
                 return null;
 
             long unixSeconds = BitConverter.ToInt64(_parser.ReadData(8)); //timestamp
 
-            GpsElements.Timestamp = DateTimeOffset
+            record.Add("Timestamp", DateTimeOffset
                 .FromUnixTimeMilliseconds(unixSeconds)
-                .UtcDateTime;
+                .UtcDateTime);
 
-            GpsElements.Priority = _parser.ReadData(1)[0]; ; // to dec
-            GpsElements.Longitude = BitConverter.ToInt32(_parser.ReadData(4));
-            GpsElements.Latitude = BitConverter.ToInt32(_parser.ReadData(4));
-            GpsElements.Altitude = BitConverter.ToInt16(_parser.ReadData(2));
-            GpsElements.Angle = BitConverter.ToInt16(_parser.ReadData(2));
-            GpsElements.Satellites = _parser.ReadData(1)[0];
-            GpsElements.Speed = BitConverter.ToInt16(_parser.ReadData(2));
-            GpsElements.EventIoId = BitConverter.ToUInt16(_parser.ReadData(2));
-            GpsElements.TotalIDs = BitConverter.ToUInt16(_parser.ReadData(2));
+            record.Add("Codec", packet.Header.CodecID);
+            record.Add("Priority", _parser.ReadData(1)[0]); // to dec
+            record.Add("Longitude", BitConverter.ToInt32(_parser.ReadData(4)));
+            record.Add("Latitude", BitConverter.ToInt32(_parser.ReadData(4)));
+            record.Add("Altitude", BitConverter.ToInt16(_parser.ReadData(2)));
+            record.Add("Angle", BitConverter.ToInt16(_parser.ReadData(2)));
+            record.Add("Satellites", _parser.ReadData(1)[0]);
+            record.Add("Speed", BitConverter.ToInt16(_parser.ReadData(2)));
+            record.Add("EventIoId", BitConverter.ToUInt16(_parser.ReadData(2)));
+            record.Add("TotalIDs", BitConverter.ToUInt16(_parser.ReadData(2)));
 
+            if (Convert.ToInt32(record["TotalIDs"]) > 0) ParseIoElements(record);
 
-            IoElement ioElement = new IoElement();
-            if (GpsElements.TotalIDs > 0)
-            {
-                ioElement = ParseIoElements();
-            }
-
-            var rec = new Elements
-            {
-                Header = packet.Header,
-                GpsElements = GpsElements,
-                IoElements = ioElement
-            };
-
-            return rec;
+            return record;
         }
 
-        public IoElement ParseIoElements()
+        public void ParseIoElements(Dictionary<string, object?> record)
         {
-            IoElement ioElement = new IoElement();
-            ioElement.N1.Count = BitConverter.ToUInt16(_parser.ReadData(2));
-
-            for (int i = 0; i < ioElement.N1.Count; i++)
+            int count = BitConverter.ToUInt16(_parser.ReadData(2));
+            for (int i = 0; i < count; i++)
             {
-                ioElement.N1.Items.Add(new IoPair<byte>
-                {
-                    IoId = BitConverter.ToUInt16(_parser.ReadData(2)),
-                    Value = _parser.ReadData(1)[0]
-                });
+                var ioId = BitConverter.ToUInt16(_parser.ReadData(2));
+                var value = _parser.ReadData(1)[0];
+
+                record.Add(ioId.ToString(), value);
+            }
+            count = BitConverter.ToUInt16(_parser.ReadData(2));
+            for (int i = 0; i < count; i++)
+            {
+                var ioId = BitConverter.ToUInt16(_parser.ReadData(2));
+                var value = BitConverter.ToUInt16(_parser.ReadData(2));
+
+                record.Add(ioId.ToString(), value);
             }
 
-            ioElement.N2.Count = BitConverter.ToUInt16(_parser.ReadData(2));
-
-            for (int i = 0; i < ioElement.N2.Count; i++)
+            count = BitConverter.ToUInt16(_parser.ReadData(2));
+            for (int i = 0; i < count; i++)
             {
+                var ioId = BitConverter.ToUInt16(_parser.ReadData(2));
+                var value = BitConverter.ToUInt32(_parser.ReadData(4));
 
-                ioElement.N2.Items.Add(new IoPair<ushort>
-                {
-                    IoId = BitConverter.ToUInt16(_parser.ReadData(2)),
-                    Value = BitConverter.ToUInt16(_parser.ReadData(2))
-                });
+                record.Add(ioId.ToString(), value);
             }
 
-            ioElement.N4.Count = BitConverter.ToUInt16(_parser.ReadData(2));
-            for (int i = 0; i < ioElement.N4.Count; i++)
+            count = BitConverter.ToUInt16(_parser.ReadData(2));
+            for (int i = 0; i < count; i++)
             {
-                ioElement.N4.Items.Add(new IoPair<uint>
-                {
-                    IoId = BitConverter.ToUInt16(_parser.ReadData(2)),
-                    Value = BitConverter.ToUInt32(_parser.ReadData(4))
-                });
+                var ioId = BitConverter.ToUInt16(_parser.ReadData(2));
+                var value = BitConverter.ToUInt64(_parser.ReadData(8));
+
+                record.Add(ioId.ToString(), value);
             }
 
-            ioElement.N8.Count = BitConverter.ToUInt16(_parser.ReadData(2));
-            for (int i = 0; i < ioElement.N8.Count; i++)
+            count = BitConverter.ToUInt16(_parser.ReadData(2));
+            for (int i = 0; i < count; i++)
             {
-                ioElement.N8.Items.Add(new IoPair<ulong>
-                {
-                    IoId = BitConverter.ToUInt16(_parser.ReadData(2)),
-                    Value = BitConverter.ToUInt64(_parser.ReadData(8))
-                });
+                var ioId = BitConverter.ToUInt16(_parser.ReadData(2));
+                var length = BitConverter.ToUInt16(_parser.ReadData(2));
+                var value = BitConverter.ToUInt32(_parser.ReadData(length));
+
+                record.Add(ioId.ToString(), value);
             }
-
-            ioElement.NX.Count = BitConverter.ToUInt16(_parser.ReadData(2));
-            for (int i = 0; i < ioElement.NX.Count; i++)
-            {
-                ushort ioId = BitConverter.ToUInt16(_parser.ReadData(2));
-                ushort length = BitConverter.ToUInt16(_parser.ReadData(2));
-                ioElement.NX.Items.Add(new IoPair<int?>
-                {
-                    IoId = ioId,
-                    Value = (int)BitConverter.ToUInt32(_parser.ReadData(length))
-                });
-            }
-
-
-            return ioElement;
         }
     }
 }

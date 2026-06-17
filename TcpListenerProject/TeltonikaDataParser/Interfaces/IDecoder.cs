@@ -11,6 +11,6 @@ namespace TcpListenerProject.TeltonikaDataParser.Interfaces
     public interface IDecoder
     {
         public Codec Codec { get; }
-        public Elements Parse(PacketResult packet);
+        public Dictionary<string, object?> Parse(PacketResult packet);
     }
 }

@@ -19,7 +19,7 @@ namespace TcpListenerProject.TeltonikaDataParser
             _decoderFactory = decoderFactory;
 
         }
-        public Elements Parse(byte[] rawMessage)
+        public Dictionary<string, object?> Parse(byte[] rawMessage)
         {
             var packet = _packetParser.Parse(rawMessage);
 

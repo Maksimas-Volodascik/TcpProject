@@ -9,6 +9,6 @@ namespace TcpListenerProject.TeltonikaDataParser.Interfaces
 {
     public interface ITeltonikaParser
     {
-        public Elements Parse(byte[] rawMessage);
+        public Dictionary<string, object?> Parse(byte[] rawMessage);
     }
 }
