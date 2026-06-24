@@ -20,8 +20,10 @@ namespace TcpListenerProject
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ITeltonikaParser _teltonikaParser;
         private readonly ConcurrentDictionary<string, int> _connectionCounts = new();
+        private readonly ConcurrentDictionary<string, (int Count, DateTime WindowStart)> _messageLimit = new();
         private readonly TcpListener _listener;
         private const int MaxConnectionsPerIp = 3;
+        private const int MaxMessagesPerDevice = 3;
 
         public TcpServer(IServiceScopeFactory scopeFactory, ITeltonikaParser teltonikaParser)
         {
@@ -46,45 +48,76 @@ namespace TcpListenerProject
 
         public async Task ServerListener()
         {
-            while (true)
+            Console.Write("Starting server...\n");
+            _listener.Start();
+            Console.Write("Waiting for a connection... \n");
+            try
             {
-                try
+                while (true)
                 {
-                    Console.Write("Starting server...\n");
+                    TcpClient client = await _listener.AcceptTcpClientAsync();
 
-                    _listener.Start();
+                    string ip = ((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString();
+                        
+                    int current = _connectionCounts.AddOrUpdate(ip, 1, (_, count) => count + 1);
 
-                    Console.Write("Waiting for a connection... \n");
-
-                    while (true)
+                    if (current > MaxConnectionsPerIp)
                     {
-                        TcpClient client = await _listener.AcceptTcpClientAsync();
-                        string ip = ((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString();
-
-                        int current = _connectionCounts.AddOrUpdate(ip, 1, (_, count) => count + 1);
-
-                        if (current > MaxConnectionsPerIp)
-                        {
-                            Console.WriteLine($"[REJECTED] {ip} exceeded connection limit ({current}/{MaxConnectionsPerIp})");
-                            _connectionCounts.AddOrUpdate(ip, 0, (_, count) => count - 1);
-                            client.Close();
-                            continue;
-                        }
-
-                        _ = HandleClientAsync(client, ip);
+                        Console.WriteLine($"[REJECTED] {ip} exceeded connection limit ({current}/{MaxConnectionsPerIp})");
+                        _connectionCounts.AddOrUpdate(ip, 0, (_, count) => count - 1);
+                        client.Close();
+                        continue;
                     }
-                }
-                catch (Exception e)
-                {
-                    Console.WriteLine("\n Socket exception: {0}", e.Message);
 
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await HandleClientAsync(client, ip);
+                        }
+                        finally
+                        {
+                            _connectionCounts.AddOrUpdate(ip, 0, (_, count) => Math.Max(0, count - 1));
+                        }
+                    });
+                        
                 }
-
-                await Task.Delay(TimeSpan.FromSeconds(5));
             }
+            catch (Exception e)
+            {
+                Console.WriteLine("\n Socket exception: {0}", e.Message);
+            }
+
+            await Task.Delay(TimeSpan.FromSeconds(5));
+
         }
 
-        public async Task HandleClientAsync(TcpClient client, string ip)
+        private bool IsRateLimited(string ip)
+        {
+            var now = DateTime.UtcNow;
+
+            var updated = _messageLimit.AddOrUpdate(
+                ip,
+                _ => (1, now),
+                (_, existing) =>
+                {
+                    if((now - existing.WindowStart).TotalSeconds >= 1)
+                    {
+                        return (1, now);
+                    }
+
+                    return (existing.Count + 1, existing.WindowStart);
+                });
+
+            if (updated.Count > MaxMessagesPerDevice)
+            {
+                Console.WriteLine($"[RATE LIMITED] {ip} sent {updated.Count} msgs in current window");
+                return true;
+            }
+            return false;
+        }
+        
+        private async Task HandleClientAsync(TcpClient client, string ip)
         {
             using var scope = _scopeFactory.CreateScope();
             var processDataService = scope.ServiceProvider.GetRequiredService<IProcessDataService>();
@@ -124,6 +157,11 @@ namespace TcpListenerProject
 
                 while (true)
                 {
+                    if (IsRateLimited(ip))
+                    {
+                        await Task.Delay(1000); // wait 1 second
+                        continue;
+                    }
                     int bytesRead = await networkStream.ReadAsync(buffer);
 
                     if (bytesRead == 0) // client disconnect
@@ -133,7 +171,9 @@ namespace TcpListenerProject
                     }
 
                     string rawData = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    Console.WriteLine("\n Received {0}", rawData);
                     var parsedData = _teltonikaParser.Parse(Convert.FromHexString(rawData));
+
                     var jsonData = JsonSerializer.Serialize(parsedData);
 
                     await processDataService.SaveRawRecordAsync(imei, rawData, jsonData); //save to DB
@@ -153,7 +193,7 @@ namespace TcpListenerProject
             }
             finally
             {
-                _connectionCounts.AddOrUpdate(ip, 0, (_, count) => Math.Max(0, count - 1));
+                Console.WriteLine("Connection closed.");
                 client.Close();
             }
         }

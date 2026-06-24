@@ -45,6 +45,12 @@ namespace TcpListenerProject.TeltonikaDataParser.Protocol
             
             if (Convert.ToInt32(record["TotalIDs"]) > 0) ParseIoElements(record);
 
+            //var json = JsonSerializer.Serialize(record, new JsonSerializerOptions
+            //{
+            //    WriteIndented = true
+            //});
+            //Console.WriteLine(json);
+
             return record;
         }
 
