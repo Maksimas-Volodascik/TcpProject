@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
@@ -18,15 +19,15 @@ namespace TcpListenerProject
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ITeltonikaParser _teltonikaParser;
+        private readonly ConcurrentDictionary<string, int> _connectionCounts = new();
+        private readonly TcpListener _listener;
+        private const int MaxConnectionsPerIp = 3;
+
         public TcpServer(IServiceScopeFactory scopeFactory, ITeltonikaParser teltonikaParser)
         {
             _scopeFactory = scopeFactory;
             _teltonikaParser = teltonikaParser;
-        }
 
-        public async Task ServerListener()
-        {
-            TcpListener server;
             Int32 port;
             IPAddress ipAddress;
 
@@ -40,23 +41,37 @@ namespace TcpListenerProject
                 port = 13000;
             }
 
+            _listener = new TcpListener(ipAddress, port);
+        }
+
+        public async Task ServerListener()
+        {
             while (true)
             {
                 try
                 {
-                    server = new TcpListener(ipAddress, port);
-
                     Console.Write("Starting server...\n");
 
-                    server.Start();
+                    _listener.Start();
 
                     Console.Write("Waiting for a connection... \n");
 
                     while (true)
                     {
-                        TcpClient client = await server.AcceptTcpClientAsync();
+                        TcpClient client = await _listener.AcceptTcpClientAsync();
+                        string ip = ((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString();
 
-                        _ = HandleClientAsync(client);
+                        int current = _connectionCounts.AddOrUpdate(ip, 1, (_, count) => count + 1);
+
+                        if (current > MaxConnectionsPerIp)
+                        {
+                            Console.WriteLine($"[REJECTED] {ip} exceeded connection limit ({current}/{MaxConnectionsPerIp})");
+                            _connectionCounts.AddOrUpdate(ip, 0, (_, count) => count - 1);
+                            client.Close();
+                            continue;
+                        }
+
+                        _ = HandleClientAsync(client, ip);
                     }
                 }
                 catch (Exception e)
@@ -69,7 +84,7 @@ namespace TcpListenerProject
             }
         }
 
-        public async Task HandleClientAsync(TcpClient client)
+        public async Task HandleClientAsync(TcpClient client, string ip)
         {
             using var scope = _scopeFactory.CreateScope();
             var processDataService = scope.ServiceProvider.GetRequiredService<IProcessDataService>();
@@ -138,6 +153,7 @@ namespace TcpListenerProject
             }
             finally
             {
+                _connectionCounts.AddOrUpdate(ip, 0, (_, count) => Math.Max(0, count - 1));
                 client.Close();
             }
         }
