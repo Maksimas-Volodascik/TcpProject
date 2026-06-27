@@ -21,7 +21,7 @@ namespace TcpListenerProject
         {
             var builder = Host.CreateApplicationBuilder();
 
-            builder.Services.AddNpgsql<DataContext>(System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
+            builder.Services.AddNpgsql<DataContext>(Environment.GetEnvironmentVariable("DB_CONNECTION") ?? System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
 
             builder.Services.AddScoped<IProcessDataService, ProcessDataService>();
             builder.Services.AddScoped<IPacketParser, PacketParser>();
