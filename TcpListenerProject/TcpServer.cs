@@ -1,10 +1,13 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Serilog;
+using Serilog.Context;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
@@ -29,7 +32,7 @@ namespace TcpListenerProject
         {
             _scopeFactory = scopeFactory;
             _teltonikaParser = teltonikaParser;
-
+            
             Int32 port;
             IPAddress ipAddress;
 
@@ -42,7 +45,7 @@ namespace TcpListenerProject
             {
                 port = 13000;
             }
-
+            Console.WriteLine("Setting IP: {0}:{1}...", ipAddress, port);
             _listener = new TcpListener(ipAddress, port);
         }
 
@@ -71,21 +74,26 @@ namespace TcpListenerProject
 
                     _ = Task.Run(async () =>
                     {
-                        try
+                        using (LogContext.PushProperty("CorrelationId", Guid.NewGuid()))
                         {
-                            await HandleClientAsync(client, ip);
-                        }
-                        finally
-                        {
-                            _connectionCounts.AddOrUpdate(ip, 0, (_, count) => Math.Max(0, count - 1));
+                            Log.Information("Client connected from {0}",
+                                client.Client.RemoteEndPoint);
+                            try
+                            {
+                                await HandleClientAsync(client, ip);
+                            }
+                            finally
+                            {
+                                _connectionCounts.AddOrUpdate(ip, 0, (_, count) => Math.Max(0, count - 1));
+                            }
                         }
                     });
                         
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine("\n Socket exception: {0}", e.Message);
+                Log.Error("\n Socket exception: {0}", ex.Message);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(5));
@@ -111,7 +119,7 @@ namespace TcpListenerProject
 
             if (updated.Count > MaxMessagesPerDevice)
             {
-                Console.WriteLine($"[RATE LIMITED] {ip} sent {updated.Count} msgs in current window");
+                Log.Warning($"[RATE LIMITED] {ip} sent {updated.Count} msgs in current window");
                 return true;
             }
             return false;
@@ -121,7 +129,7 @@ namespace TcpListenerProject
         {
             using var scope = _scopeFactory.CreateScope();
             var processDataService = scope.ServiceProvider.GetRequiredService<IProcessDataService>();
-            
+
             try
             {
                 var networkStream = client.GetStream();
@@ -131,13 +139,11 @@ namespace TcpListenerProject
 
                 if (imeiByteCount == 0) // client disconnect
                 {
-                    Console.WriteLine("\nDisconnected");
+                    Log.Information("\n{0} Disconnected",client.Client.RemoteEndPoint);
                     return;
                 }
 
                 string imei = System.Text.Encoding.UTF8.GetString(buffer, 0, imeiByteCount);
-
-                Console.WriteLine("\n{0} Connecting...", imei);
 
                 try
                 {
@@ -145,7 +151,7 @@ namespace TcpListenerProject
                 }
                 catch (ArgumentException ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    Log.Error("Exception: {0}",ex.Message);
                     return;
                 }
 
@@ -153,7 +159,7 @@ namespace TcpListenerProject
                 byte[] imeiResponse = System.Text.Encoding.UTF8.GetBytes(imeiAcknowledgement);
                 await networkStream.WriteAsync(imeiResponse, 0, imeiResponse.Length);
 
-                Console.WriteLine("{0} Connection established\n", imei);
+                Log.Information("{0} Connection established\n", imei);
 
                 while (true)
                 {
@@ -166,34 +172,32 @@ namespace TcpListenerProject
 
                     if (bytesRead == 0) // client disconnect
                     {
-                        Console.WriteLine("\nDisconnected");
+                        Log.Information("{0} Connection closed.", client.Client.RemoteEndPoint);
                         break;
                     }
 
                     string rawData = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                    Console.WriteLine("\n Received {0}", rawData);
+                    Log.Information("\n Received {0}", rawData);
                     var parsedData = _teltonikaParser.Parse(Convert.FromHexString(rawData));
 
                     var jsonData = JsonSerializer.Serialize(parsedData);
 
                     await processDataService.SaveRawRecordAsync(imei, rawData, jsonData); //save to DB
-
-                    Console.WriteLine("\n Received {0}", rawData);
                     
                     // send back acknowledgement
                     string responseMsg = "01";
                     byte[] acknowledgementBytes = System.Text.Encoding.UTF8.GetBytes(responseMsg);
                     await networkStream.WriteAsync(acknowledgementBytes, 0, acknowledgementBytes.Length);
-                    Console.WriteLine("\n Sent: {0} \n", responseMsg);
+                    Log.Information("\n Sent: {0} \n", responseMsg);
                 }
             }
-            catch (Exception e)
+            catch (Exception ex)
             {
-                Console.WriteLine("Socket error: {0}", e.Message);
+                Log.Error("Socket exception: {0}", ex.Message);
             }
             finally
             {
-                Console.WriteLine("Connection closed.");
+                Log.Information("{0} Connection closed.",client.Client.RemoteEndPoint);
                 client.Close();
             }
         }

@@ -372,3 +372,4 @@ App.config
 /TcpListenerProject/replacements.txt
 /TcpListenerProject/git-filter-repo
 /TcpListenerProject/App.config
+/TcpListenerProject/docker-compose.yml

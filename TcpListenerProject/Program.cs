@@ -1,17 +1,15 @@
-﻿using System.Configuration;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Serilog;
+using Serilog.Events;
+using System.Configuration;
 using TcpListenerProject.TeltonikaDataParser;
 using TcpListenerProject.TeltonikaDataParser.Decoder;
 using TcpListenerProject.TeltonikaDataParser.Interfaces;
 using TcpListenerProject.TeltonikaDataParser.Protocol;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TcpListenerProject
 {
@@ -21,7 +19,9 @@ namespace TcpListenerProject
         {
             var builder = Host.CreateApplicationBuilder();
 
-            builder.Services.AddNpgsql<DataContext>(Environment.GetEnvironmentVariable("DB_CONNECTION") ?? System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
+            //builder.Services.AddNpgsql<DataContext>(System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
+            builder.Services.AddNpgsql<DataContext>(Environment.GetEnvironmentVariable("DB_CONNECTION") 
+                ?? System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
 
             builder.Services.AddScoped<IProcessDataService, ProcessDataService>();
             builder.Services.AddScoped<IPacketParser, PacketParser>();
@@ -32,7 +32,17 @@ namespace TcpListenerProject
 
             builder.Services.AddSingleton<TcpServer>();
 
-            builder.Logging.AddFilter("Microsoft.EntityFrameworkCore.Database.Command",LogLevel.Warning);
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Information()
+                .Enrich.FromLogContext()
+                .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning) // EF filter
+                .WriteTo.Console(outputTemplate:
+                    "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}")
+                .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+                .CreateLogger();
+
+            builder.Logging.ClearProviders();
+            builder.Services.AddSerilog();
 
             var host = builder.Build();
 

@@ -11,8 +11,7 @@ namespace TcpClientProject
         public static NetworkStream stream;
         public static async Task Main(string[] args)
         {
-
-            Connect("123456789012345");
+            Connect("123456789010000");
 
             while (true)
             {
@@ -26,7 +25,8 @@ namespace TcpClientProject
 
         public static async Task Connect(string deviceImei)
         {
-            string server = "192.168.0.175";
+            //string server = "192.168.0.175";
+            string server = "127.0.0.1";
             Int32 port = 13000;
             int maxRetries = 5; 
             int waitTimer = 1000; //ms
