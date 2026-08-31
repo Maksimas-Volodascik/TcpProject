@@ -137,13 +137,15 @@ namespace TcpListenerProject
 
                 int imeiByteCount = await networkStream.ReadAsync(buffer);
 
-                if (imeiByteCount == 0) // client disconnect
+                string imeiHexString = System.Text.Encoding.ASCII.GetString(buffer, 0, imeiByteCount);
+
+                if (imeiByteCount != 34 || Convert.ToInt32(imeiHexString[..4], 16) != 15) // client disconnect
                 {
                     Log.Information("\n{0} Disconnected",client.Client.RemoteEndPoint);
                     return;
                 }
 
-                string imei = System.Text.Encoding.UTF8.GetString(buffer, 0, imeiByteCount);
+                string imei = Encoding.ASCII.GetString(Convert.FromHexString(imeiHexString[4..]));
 
                 try
                 {
@@ -155,8 +157,9 @@ namespace TcpListenerProject
                     return;
                 }
 
+                /*
                 string imeiAcknowledgement = "01";
-                byte[] imeiResponse = System.Text.Encoding.UTF8.GetBytes(imeiAcknowledgement);
+                byte[] imeiResponse = System.Text.Encoding.ASCII.GetBytes(imeiAcknowledgement);
                 await networkStream.WriteAsync(imeiResponse, 0, imeiResponse.Length);
 
                 Log.Information("{0} Connection established\n", imei);
@@ -176,7 +179,7 @@ namespace TcpListenerProject
                         break;
                     }
 
-                    string rawData = System.Text.Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    string rawData = System.Text.Encoding.ASCII.GetString(buffer, 0, bytesRead);
                     Log.Information("\n Received {0}", rawData);
                     var parsedData = _teltonikaParser.Parse(Convert.FromHexString(rawData));
 
@@ -186,10 +189,10 @@ namespace TcpListenerProject
                     
                     // send back acknowledgement
                     string responseMsg = "01";
-                    byte[] acknowledgementBytes = System.Text.Encoding.UTF8.GetBytes(responseMsg);
+                    byte[] acknowledgementBytes = System.Text.Encoding.ASCII.GetBytes(responseMsg);
                     await networkStream.WriteAsync(acknowledgementBytes, 0, acknowledgementBytes.Length);
                     Log.Information("\n Sent: {0} \n", responseMsg);
-                }
+                }*/
             }
             catch (Exception ex)
             {

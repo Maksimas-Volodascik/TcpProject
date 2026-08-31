@@ -34,7 +34,7 @@ namespace TcpListenerProject
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
-                .Enrich.FromLogContext()
+                .Enrich.FromLogContext() //Save unique correlation ID per connection.
                 .MinimumLevel.Override("Microsoft.EntityFrameworkCore.Database.Command", LogEventLevel.Warning) // EF filter
                 .WriteTo.Console(outputTemplate:
                     "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}")

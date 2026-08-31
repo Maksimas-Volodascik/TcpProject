@@ -11,7 +11,7 @@ namespace TcpClientProject
         public static NetworkStream stream;
         public static async Task Main(string[] args)
         {
-            Connect("123456789010000");
+            Connect("000F313233343536373839303130303030");
 
             while (true)
             {
@@ -25,7 +25,7 @@ namespace TcpClientProject
 
         public static async Task Connect(string deviceImei)
         {
-            //string server = "192.168.0.175";
+            //string server = "192.168.0.175"; Docker
             string server = "127.0.0.1";
             Int32 port = 13000;
             int maxRetries = 5; 
@@ -54,7 +54,7 @@ namespace TcpClientProject
             stream = client.GetStream();
 
             //Send IMEI
-            byte[] sendData = System.Text.Encoding.UTF8.GetBytes(deviceImei);
+            byte[] sendData = System.Text.Encoding.ASCII.GetBytes(deviceImei);
             stream.Write(sendData, 0, sendData.Length);
             Console.WriteLine("Sending IMEI...");
             //Receive ACK
@@ -74,7 +74,7 @@ namespace TcpClientProject
 
         public static async Task Send(string message)
         {
-            byte[] sendData = System.Text.Encoding.UTF8.GetBytes(message);
+            byte[] sendData = System.Text.Encoding.ASCII.GetBytes(message);
 
             stream.Write(sendData, 0, sendData.Length);
 
@@ -98,7 +98,7 @@ namespace TcpClientProject
                         break;
                     }
 
-                    responseData = System.Text.Encoding.UTF8.GetString(receiveData, 0, bytes);
+                    responseData = System.Text.Encoding.ASCII.GetString(receiveData, 0, bytes);
 
                     Console.WriteLine("Received: {0}", responseData);
                 }
