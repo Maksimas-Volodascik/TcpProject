@@ -2,6 +2,7 @@
 using System.IO;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 
 namespace TcpClientProject
 {
@@ -11,6 +12,26 @@ namespace TcpClientProject
         public static NetworkStream stream;
         public static async Task Main(string[] args)
         {
+            try
+            {
+                using (StreamReader sr = File.OpenText("Coordinates.txt")) // contains rows of longitude,latitude
+                {
+                    string s = "";
+                    while ((s = sr.ReadLine()) != null)
+                    {
+                        string[] coords = s.Split(',');
+
+                        PacketBuilder PB = new PacketBuilder(Double.Parse(coords[0]), Double.Parse(coords[1]));
+                        Console.WriteLine(PB.GetCodecString());
+                    }
+                }
+            }
+
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+            /*
             Connect("000F313233343536373839303130303030");
 
             while (true)
@@ -20,7 +41,7 @@ namespace TcpClientProject
                 if (string.IsNullOrEmpty(message)) break;
 
                 await Send(message);
-            }
+            }*/
         }
 
         public static async Task Connect(string deviceImei)
