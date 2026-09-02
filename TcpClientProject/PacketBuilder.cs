@@ -8,23 +8,21 @@ namespace TcpClientProject
 {
     public class PacketBuilder
     {
-        public double longitude { get; }
-        public double latitude { get; }
-        public PacketBuilder(double longitude, double latitude)
+        public DateTimeOffset dateTime { get; set; }
+        public PacketBuilder(DateTimeOffset _dateTime)
         {
-            this.longitude = longitude;
-            this.latitude = latitude;
+            dateTime = _dateTime;
         }
 
-        public string GetCodecString()
+        public string GetCodecString(double longitude, double latitude)
         {
             string longHex = DMSParser(longitude);
             string latHex = DMSParser(latitude);
 
+            dateTime = dateTime.AddSeconds(1);
+            string newDate = dateTime.ToUnixTimeMilliseconds().ToString("X16");
 
-            //byte[] bytes = Encoding.ASCII.GetBytes(coords[0]);
-            //string hexString = BitConverter.ToString(bytes).Replace("-", "");
-            return ($"000000000000004A8E010000016B412CEE0001{longHex}{latHex}0000000000000000010005000100010100010011001D00010010015E2C880002000B000000003544C87A000E000000001DD7E06A00000100002994");
+            return ($"000000000000004A8E01{newDate}01{longHex}{latHex}0000000000000000010005000100010100010011001D00010010015E2C880002000B000000003544C87A000E000000001DD7E06A00000100002994");
         }
 
         private string DMSParser(double coordValue)

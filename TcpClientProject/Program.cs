@@ -12,6 +12,11 @@ namespace TcpClientProject
         public static NetworkStream stream;
         public static async Task Main(string[] args)
         {
+            DateTimeOffset dateTime = new DateTimeOffset(2026, 2, 9, 15, 30, 25, TimeSpan.Zero);
+            PacketBuilder PB = new PacketBuilder(dateTime);
+
+            Connect("000F313233343536373839303130303030");
+
             try
             {
                 using (StreamReader sr = File.OpenText("Coordinates.txt")) // contains rows of longitude,latitude
@@ -21,26 +26,23 @@ namespace TcpClientProject
                     {
                         string[] coords = s.Split(',');
 
-                        PacketBuilder PB = new PacketBuilder(Double.Parse(coords[0]), Double.Parse(coords[1]));
-                        Console.WriteLine(PB.GetCodecString());
+                        await Send(PB.GetCodecString(Double.Parse(coords[0]), Double.Parse(coords[1])));
                     }
                 }
             }
-
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
             }
-            /*
-            Connect("000F313233343536373839303130303030");
 
+            /*
             while (true)
             {
                 string? message = Console.ReadLine();
 
                 if (string.IsNullOrEmpty(message)) break;
 
-                await Send(message);
+                await Send(codecPacket);
             }*/
         }
 

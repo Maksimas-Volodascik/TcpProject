@@ -156,8 +156,7 @@ namespace TcpListenerProject
                     Log.Error("Exception: {0}",ex.Message);
                     return;
                 }
-
-                /*
+                
                 string imeiAcknowledgement = "01";
                 byte[] imeiResponse = System.Text.Encoding.ASCII.GetBytes(imeiAcknowledgement);
                 await networkStream.WriteAsync(imeiResponse, 0, imeiResponse.Length);
@@ -192,7 +191,7 @@ namespace TcpListenerProject
                     byte[] acknowledgementBytes = System.Text.Encoding.ASCII.GetBytes(responseMsg);
                     await networkStream.WriteAsync(acknowledgementBytes, 0, acknowledgementBytes.Length);
                     Log.Information("\n Sent: {0} \n", responseMsg);
-                }*/
+                }
             }
             catch (Exception ex)
             {
