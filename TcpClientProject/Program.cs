@@ -14,39 +14,34 @@ namespace TcpClientProject
         {
             DateTimeOffset dateTime = new DateTimeOffset(2026, 2, 9, 15, 30, 25, TimeSpan.Zero);
             PacketBuilder PB = new PacketBuilder(dateTime);
-
-            Connect("000F313233343536373839303130303030");
-
-            try
+ 
+            if (await Connect("000F313233343536373839303130303030"))
             {
-                using (StreamReader sr = File.OpenText("Coordinates.txt")) // contains rows of longitude,latitude
+                try
                 {
-                    string s = "";
-                    while ((s = sr.ReadLine()) != null)
+                    using (StreamReader sr = File.OpenText("Coordinates.txt")) // contains rows of longitude,latitude
                     {
-                        string[] coords = s.Split(',');
+                        string s = "";
+                        while ((s = sr.ReadLine()) != null)
+                        {
+                            string[] coords = s.Split(',');
 
-                        await Send(PB.GetCodecString(Double.Parse(coords[0]), Double.Parse(coords[1])));
+                            await Send(PB.GetCodecString(Double.Parse(coords[0]), Double.Parse(coords[1])));
+                        }
                     }
                 }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
             }
-            catch (Exception ex)
+            else
             {
-                Console.WriteLine(ex.ToString());
+                Console.WriteLine("Nothing happened");
             }
-
-            /*
-            while (true)
-            {
-                string? message = Console.ReadLine();
-
-                if (string.IsNullOrEmpty(message)) break;
-
-                await Send(codecPacket);
-            }*/
         }
 
-        public static async Task Connect(string deviceImei)
+        public static async Task<bool> Connect(string deviceImei)
         {
             //string server = "192.168.0.175"; Docker
             string server = "127.0.0.1";
@@ -65,12 +60,16 @@ namespace TcpClientProject
                 }
                 catch (SocketException)
                 {
-                    Console.WriteLine("Server is unreachable \n");
+                    Console.WriteLine("Server is unreachable \n");  
                 }
                 maxRetries--;
                 if (maxRetries > 0)
                 {
                     await Task.Delay(waitTimer);
+                }
+                else
+                {
+                    return false;
                 }
             }  
 
@@ -87,12 +86,13 @@ namespace TcpClientProject
             if (bytes == 0)
             {
                 Console.WriteLine("Connection closed");
-                return;
+                return false;
             }
 
             Console.WriteLine("Handshake complete.\n");
 
             _ = Task.Run(ReceiveAsync);
+            return true;
         }
 
         public static async Task Send(string message)
