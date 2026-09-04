@@ -20,4 +20,8 @@
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="10.0.7" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="..\.dockerignore" Link="Deploy\.dockerignore" />
+  </ItemGroup>
+
 </Project>

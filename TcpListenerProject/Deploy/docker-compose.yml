@@ -1,0 +1,65 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - /volume2/docker/postgres/data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    networks:
+      - appnetwork
+
+  tcplistener:
+    image: ghcr.io/maksimas-volodascik/tcplistener:latest
+    container_name: tcplistener
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    environment:
+      - DB_CONNECTION=Username=${DB_USER};Password=${DB_PASSWORD};Host=postgres;Port=5432;Database=${DB_NAME};Pooling=true;Minimum Pool Size=0;Maximum Pool Size=100;Connection Lifetime=0;
+    ports:
+      - "13000:13000"
+    networks:
+      - appnetwork
+
+  loctrackapi:
+    image: ghcr.io/maksimas-volodascik/loctrackapi:latest
+    container_name: loctrackapi 
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_CONNECTION=Username=${DB_USER};Password=${DB_PASSWORD};Host=postgres;Port=5432;Database=${DB_NAME};Pooling=true;Minimum Pool Size=0;Maximum Pool Size=100;Connection Lifetime=0;
+    networks:
+      - appnetwork
+
+  loctrackweb:
+    image: ghcr.io/maksimas-volodascik/loctrackweb:latest
+    container_name: loctrackweb 
+    restart: unless-stopped
+    ports:
+      - "5173:80"
+    networks:
+      - appnetwork
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel run
+    environment:
+        TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    networks: 
+      - appnetwork
+
+networks:
+  appnetwork:
+    driver: bridge

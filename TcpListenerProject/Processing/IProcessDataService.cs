@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TcpListenerProject.Entity;
 
-namespace TcpListenerProject
+namespace TcpListenerProject.Processing
 {
     public interface IProcessDataService
     {

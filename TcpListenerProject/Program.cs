@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 using System.Configuration;
+using TcpListenerProject.Processing;
 using TcpListenerProject.TeltonikaDataParser;
 using TcpListenerProject.TeltonikaDataParser.Decoder;
 using TcpListenerProject.TeltonikaDataParser.Interfaces;
