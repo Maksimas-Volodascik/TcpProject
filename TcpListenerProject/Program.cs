@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Events;
 using System.Configuration;
+using TcpListenerProject.Logging;
 using TcpListenerProject.Processing;
 using TcpListenerProject.TeltonikaDataParser;
 using TcpListenerProject.TeltonikaDataParser.Decoder;
@@ -20,9 +21,8 @@ namespace TcpListenerProject
         {
             var builder = Host.CreateApplicationBuilder();
 
-            //builder.Services.AddNpgsql<DataContext>(System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
-            builder.Services.AddNpgsql<DataContext>(Environment.GetEnvironmentVariable("DB_CONNECTION") 
-                ?? System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString);
+            builder.Services.AddDbContextFactory<DataContext>(o => o.UseNpgsql(Environment.GetEnvironmentVariable("DB_CONNECTION")
+                ?? System.Configuration.ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString)); //registering factory and scoped DB Context
 
             builder.Services.AddScoped<IProcessDataService, ProcessDataService>();
             builder.Services.AddScoped<IPacketParser, PacketParser>();
@@ -30,8 +30,9 @@ namespace TcpListenerProject
             builder.Services.AddScoped<ITeltonikaParser, TeltonikaParser>();
             builder.Services.AddScoped<IDecoder, Codec8Parser>();
             builder.Services.AddScoped<IDecoder, Codec8EParser>();
-
-            builder.Services.AddSingleton<TcpServer>();
+            builder.Services.AddSingleton<LogQueue>();
+            builder.Services.AddHostedService<LogWriter>();
+            builder.Services.AddHostedService<TcpServer>();
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Information()
@@ -46,10 +47,7 @@ namespace TcpListenerProject
             builder.Services.AddSerilog();
 
             var host = builder.Build();
-
-            var server = host.Services.GetRequiredService<TcpServer>();
-
-            await server.ServerListener();
+            await host.RunAsync();
         }
     }
 }

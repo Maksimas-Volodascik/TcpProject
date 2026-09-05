@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Context;
 using System;
@@ -12,6 +13,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
+using TcpListenerProject.Logging;
 using TcpListenerProject.Processing;
 using TcpListenerProject.TeltonikaDataParser;
 using TcpListenerProject.TeltonikaDataParser.Interfaces;
@@ -19,20 +21,22 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TcpListenerProject
 {
-    public class TcpServer
+    public class TcpServer : BackgroundService
     {
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ITeltonikaParser _teltonikaParser;
         private readonly ConcurrentDictionary<string, int> _connectionCounts = new();
         private readonly ConcurrentDictionary<string, (int Count, DateTime WindowStart)> _messageLimit = new();
         private readonly TcpListener _listener;
+        private readonly LogQueue _queue;
         private const int MaxConnectionsPerIp = 3;
         private const int MaxMessagesPerDevice = 3;
 
-        public TcpServer(IServiceScopeFactory scopeFactory, ITeltonikaParser teltonikaParser)
+        public TcpServer(IServiceScopeFactory scopeFactory, ITeltonikaParser teltonikaParser, LogQueue queue)
         {
             _scopeFactory = scopeFactory;
             _teltonikaParser = teltonikaParser;
+            _queue = queue;
             
             Int32 port;
             IPAddress ipAddress;
@@ -50,8 +54,9 @@ namespace TcpListenerProject
             _listener = new TcpListener(ipAddress, port);
         }
 
-        public async Task ServerListener()
+        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            //Todo - use stopping token to define server shutdown
             Console.Write("Starting server...\n");
             _listener.Start();
             Console.Write("Waiting for a connection... \n");
@@ -62,7 +67,7 @@ namespace TcpListenerProject
                     TcpClient client = await _listener.AcceptTcpClientAsync();
 
                     string ip = ((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString();
-                        
+
                     int current = _connectionCounts.AddOrUpdate(ip, 1, (_, count) => count + 1);
 
                     if (current > MaxConnectionsPerIp)
@@ -77,8 +82,8 @@ namespace TcpListenerProject
                     {
                         using (LogContext.PushProperty("CorrelationId", Guid.NewGuid()))
                         {
-                            Log.Information("Client connected from {0}",
-                                client.Client.RemoteEndPoint);
+                            Log.Information("Client connected from {0}", client.Client.RemoteEndPoint);
+                            _queue.TryEnqueue("Client connected");
                             try
                             {
                                 await HandleClientAsync(client, ip);
@@ -89,16 +94,15 @@ namespace TcpListenerProject
                             }
                         }
                     });
-                        
                 }
             }
             catch (Exception ex)
             {
                 Log.Error("\n Socket exception: {0}", ex.Message);
+                _queue.TryEnqueue(ex.Message);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(5));
-
         }
 
         private bool IsRateLimited(string ip)
@@ -197,6 +201,7 @@ namespace TcpListenerProject
             catch (Exception ex)
             {
                 Log.Error("Socket exception: {0}", ex.Message);
+                _queue.TryEnqueue(ex.Message);
             }
             finally
             {
