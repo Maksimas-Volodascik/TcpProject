@@ -10,7 +10,7 @@ namespace TcpListenerProject.Entity
     public class LogEntry
     {
         [Key]
-        public Guid Id { get; set; }
+        public Guid? Id { get; set; }
 
         public Guid TraceId { get; set; }
 
@@ -20,13 +20,6 @@ namespace TcpListenerProject.Entity
 
         [MaxLength(2000)]
         public string Message { get; set; } = string.Empty;
-        public Severity Severity { get; set; }
-    }
-
-    public enum Severity
-    {
-        Info = 2,
-        Warning = 3,
-        Error = 4
+        public string Severity { get; set; } = string.Empty;
     }
 }

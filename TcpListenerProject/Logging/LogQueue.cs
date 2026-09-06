@@ -19,6 +19,7 @@ namespace TcpListenerProject.Logging
 
         public ChannelReader<LogEntry> Reader => _channel.Reader;
 
-        public bool TryEnqueue(string message) => _channel.Writer.TryWrite(new LogEntry { Message = message});
+        public bool TryEnqueue(LogEntry log) => _channel.Writer.TryWrite(log);
+
     }
 }

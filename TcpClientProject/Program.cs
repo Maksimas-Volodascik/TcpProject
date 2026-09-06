@@ -19,16 +19,30 @@ namespace TcpClientProject
             {
                 try
                 {
-                    using (StreamReader sr = File.OpenText("Coordinates.txt")) // contains rows of longitude,latitude
+                    Console.WriteLine("Upload type: \n 1. Manual \n 2. File");
+                    var option = Console.ReadLine();
+                    if (option == "1")
                     {
-                        string s = "";
-                        while ((s = sr.ReadLine()) != null)
+                        while (true)
                         {
-                            string[] coords = s.Split(',');
-
-                            await Send(PB.GetCodecString(Double.Parse(coords[0]), Double.Parse(coords[1])));
+                            var codec = Console.ReadLine();
+                            await Send(codec);
                         }
                     }
+                    else if(option == "2")
+                    {
+                        using (StreamReader sr = File.OpenText("Coordinates.txt")) // contains rows of longitude,latitude
+                        {
+                            string s = "";
+                            while ((s = sr.ReadLine()) != null)
+                            {
+                                string[] coords = s.Split(',');
+                                //Console.WriteLine(PB.GetCodecString(Double.Parse(coords[0]), Double.Parse(coords[1])));
+                                await Task.Delay(1000);
+                                await Send(PB.GetCodecString(Double.Parse(coords[0]), Double.Parse(coords[1])));
+                            }
+                        }
+                    } 
                 }
                 catch (Exception ex)
                 {

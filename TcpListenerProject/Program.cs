@@ -19,6 +19,8 @@ namespace TcpListenerProject
     {
         public static async Task Main(string[] args)
         {
+            var logQueue = new LogQueue();
+
             var builder = Host.CreateApplicationBuilder();
 
             builder.Services.AddDbContextFactory<DataContext>(o => o.UseNpgsql(Environment.GetEnvironmentVariable("DB_CONNECTION")
@@ -30,7 +32,7 @@ namespace TcpListenerProject
             builder.Services.AddScoped<ITeltonikaParser, TeltonikaParser>();
             builder.Services.AddScoped<IDecoder, Codec8Parser>();
             builder.Services.AddScoped<IDecoder, Codec8EParser>();
-            builder.Services.AddSingleton<LogQueue>();
+            builder.Services.AddSingleton(logQueue);
             builder.Services.AddHostedService<LogWriter>();
             builder.Services.AddHostedService<TcpServer>();
 
@@ -41,6 +43,7 @@ namespace TcpListenerProject
                 .WriteTo.Console(outputTemplate:
                     "[{Timestamp:HH:mm:ss} {Level:u3}] [{CorrelationId}] {Message:lj}{NewLine}{Exception}")
                 .WriteTo.File("Logs/log-.txt", rollingInterval: RollingInterval.Day)
+                .WriteTo.Sink(new QueueSink(logQueue))
                 .CreateLogger();
 
             builder.Logging.ClearProviders();

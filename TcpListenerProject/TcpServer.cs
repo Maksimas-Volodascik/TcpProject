@@ -83,7 +83,6 @@ namespace TcpListenerProject
                         using (LogContext.PushProperty("CorrelationId", Guid.NewGuid()))
                         {
                             Log.Information("Client connected from {0}", client.Client.RemoteEndPoint);
-                            _queue.TryEnqueue("Client connected");
                             try
                             {
                                 await HandleClientAsync(client, ip);
@@ -99,7 +98,6 @@ namespace TcpListenerProject
             catch (Exception ex)
             {
                 Log.Error("\n Socket exception: {0}", ex.Message);
-                _queue.TryEnqueue(ex.Message);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(5));
@@ -185,8 +183,8 @@ namespace TcpListenerProject
 
                     string rawData = System.Text.Encoding.ASCII.GetString(buffer, 0, bytesRead);
                     Log.Information("\n Received {0}", rawData);
-                    var parsedData = _teltonikaParser.Parse(Convert.FromHexString(rawData));
 
+                    var parsedData = _teltonikaParser.Parse(Convert.FromHexString(rawData));
                     var jsonData = JsonSerializer.Serialize(parsedData);
 
                     await processDataService.SaveRawRecordAsync(imei, rawData, jsonData); //save to DB
@@ -200,8 +198,7 @@ namespace TcpListenerProject
             }
             catch (Exception ex)
             {
-                Log.Error("Socket exception: {0}", ex.Message);
-                _queue.TryEnqueue(ex.Message);
+                Log.Error("Client socket exception: {0}", ex.Message);
             }
             finally
             {
