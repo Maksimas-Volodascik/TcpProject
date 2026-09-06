@@ -38,8 +38,9 @@ namespace TcpListenerProject.TeltonikaDataParser.Protocol
             record.Add("Speed", BitConverter.ToInt16(_parser.ReadData(2)));
             record.Add("EventIoId", BitConverter.ToUInt16(_parser.ReadData(2)));
             record.Add("TotalIDs", BitConverter.ToUInt16(_parser.ReadData(2)));
-
             if (Convert.ToInt32(record["TotalIDs"]) > 0) ParseIoElements(record);
+
+            Console.WriteLine(JsonSerializer.Serialize(record, new JsonSerializerOptions { WriteIndented = true }));
 
             return record;
         }
@@ -54,6 +55,7 @@ namespace TcpListenerProject.TeltonikaDataParser.Protocol
 
                 record.Add(ioId.ToString(), value);
             }
+            
             count = BitConverter.ToUInt16(_parser.ReadData(2));
             for (int i = 0; i < count; i++)
             {
@@ -62,7 +64,7 @@ namespace TcpListenerProject.TeltonikaDataParser.Protocol
 
                 record.Add(ioId.ToString(), value);
             }
-
+            
             count = BitConverter.ToUInt16(_parser.ReadData(2));
             for (int i = 0; i < count; i++)
             {
@@ -71,7 +73,7 @@ namespace TcpListenerProject.TeltonikaDataParser.Protocol
 
                 record.Add(ioId.ToString(), value);
             }
-
+            
             count = BitConverter.ToUInt16(_parser.ReadData(2));
             for (int i = 0; i < count; i++)
             {
@@ -80,13 +82,19 @@ namespace TcpListenerProject.TeltonikaDataParser.Protocol
 
                 record.Add(ioId.ToString(), value);
             }
-
+            
             count = BitConverter.ToUInt16(_parser.ReadData(2));
+
+            
             for (int i = 0; i < count; i++)
             {
                 var ioId = BitConverter.ToUInt16(_parser.ReadData(2));
                 var length = BitConverter.ToUInt16(_parser.ReadData(2));
-                var value = BitConverter.ToUInt32(_parser.ReadData(length));
+                UInt32 value = 0;
+                if (length!= 0)
+                {
+                    value = BitConverter.ToUInt32(_parser.ReadData(length));
+                } 
 
                 record.Add(ioId.ToString(), value);
             }
