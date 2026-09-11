@@ -39,7 +39,7 @@ namespace TcpListenerProject.Logging
             _queue.TryEnqueue(new LogEntry
             {
                 TraceId = correlationId,
-                ReceivedDate = logEvent.Timestamp,
+                ReceivedDate = logEvent.Timestamp.ToUniversalTime(),
                 Message = logEvent.RenderMessage(_formatProvider),
                 Severity = logEvent.Level.ToString(),
             });

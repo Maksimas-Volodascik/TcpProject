@@ -10,12 +10,12 @@ namespace TcpListenerProject.Entity
     public class LogEntry
     {
         [Key]
-        public Guid? Id { get; set; }
+        public Guid Id { get; set; } = Guid.CreateVersion7();
 
         public Guid TraceId { get; set; }
 
         [MaxLength(20)]
-        public string? Imei { get; set; }
+        public string Imei { get; set; } = string.Empty;
         public DateTimeOffset ReceivedDate { get; set; }
 
         [MaxLength(2000)]

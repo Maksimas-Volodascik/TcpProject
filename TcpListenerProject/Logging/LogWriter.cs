@@ -72,10 +72,10 @@ namespace TcpListenerProject.Logging
         private async Task FlushOnceAsync(List<LogEntry> batch, CancellationToken cancellationToken)
         {
             Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] Flush: {batch.Count} entries");
-            /*await using var db = await _factory.CreateDbContextAsync(cancellationToken);
+            await using var db = await _factory.CreateDbContextAsync(cancellationToken);
             db.ChangeTracker.AutoDetectChangesEnabled = false;
-            db.Logs.AddRange(batch);
-            await db.SaveChangesAsync(cancellationToken);*/
+            db.LogEntry.AddRange(batch);
+            await db.SaveChangesAsync(cancellationToken);
         }
 
         private async Task FlushAsync(List<LogEntry> batch, CancellationToken cancellationToken)
