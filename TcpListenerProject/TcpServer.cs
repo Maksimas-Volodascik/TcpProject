@@ -17,6 +17,7 @@ using TcpListenerProject.Logging;
 using TcpListenerProject.Processing;
 using TcpListenerProject.TeltonikaDataParser;
 using TcpListenerProject.TeltonikaDataParser.Interfaces;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TcpListenerProject
@@ -57,9 +58,9 @@ namespace TcpListenerProject
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             //Todo - use stopping token to define server shutdown
-            Console.Write("Starting server...\n");
+            Console.Write("Starting server...");
             _listener.Start();
-            Console.Write("Waiting for a connection... \n");
+            Console.Write("Waiting for a connection...");
             try
             {
                 while (true)
@@ -72,7 +73,7 @@ namespace TcpListenerProject
 
                     if (current > MaxConnectionsPerIp)
                     {
-                        Console.WriteLine($"[REJECTED] {ip} exceeded connection limit ({current}/{MaxConnectionsPerIp})");
+                        Log.Warning($"[REJECTED] {ip} exceeded connection limit ({current}/{MaxConnectionsPerIp})");
                         _connectionCounts.AddOrUpdate(ip, 0, (_, count) => count - 1);
                         client.Close();
                         continue;
@@ -87,6 +88,14 @@ namespace TcpListenerProject
                             {
                                 await HandleClientAsync(client, ip);
                             }
+                            catch(IOException ex)
+                            {
+                                Log.Warning(ex, "Device disconnected unexpectedly, connection closed");
+                            }
+                            catch(Exception ex)
+                            {
+                                Log.Error(ex, "Error while handling device connection, connection closed");
+                            }
                             finally
                             {
                                 _connectionCounts.AddOrUpdate(ip, 0, (_, count) => Math.Max(0, count - 1));
@@ -97,7 +106,7 @@ namespace TcpListenerProject
             }
             catch (Exception ex)
             {
-                Log.Error("\n Socket exception: {0}", ex.Message);
+                Log.Error("Socket exception: {0}", ex.Message);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(5));
@@ -144,7 +153,7 @@ namespace TcpListenerProject
 
                 if (imeiByteCount != 34 || Convert.ToInt32(imeiHexString[..4], 16) != 15) // client disconnect
                 {
-                    Log.Information("\n{0} Disconnected",client.Client.RemoteEndPoint);
+                    Log.Information("{0} Disconnected",client.Client.RemoteEndPoint);
                     return;
                 }
 
@@ -164,7 +173,7 @@ namespace TcpListenerProject
                 byte[] imeiResponse = System.Text.Encoding.ASCII.GetBytes(imeiAcknowledgement);
                 await networkStream.WriteAsync(imeiResponse, 0, imeiResponse.Length);
 
-                Log.Information("{0} Connection established\n", imei);
+                Log.Information("{0} Connection established", imei);
 
                 while (true)
                 {
@@ -177,28 +186,22 @@ namespace TcpListenerProject
 
                     if (bytesRead == 0) // client disconnect
                     {
-                        Log.Information("{0} Connection closed.", client.Client.RemoteEndPoint);
                         break;
                     }
 
                     string rawData = System.Text.Encoding.ASCII.GetString(buffer, 0, bytesRead);
-                    Log.Information("\n Received {0}", rawData);
+                    Log.Information("Received {0}", rawData);
 
                     var parsedData = _teltonikaParser.Parse(Convert.FromHexString(rawData));
                     var jsonData = JsonSerializer.Serialize(parsedData);
+                    await processDataService.SaveRawRecordAsync(imei, rawData, jsonData);
 
-                    await processDataService.SaveRawRecordAsync(imei, rawData, jsonData); //save to DB
-                    
                     // send back acknowledgement
                     string responseMsg = "01";
                     byte[] acknowledgementBytes = System.Text.Encoding.ASCII.GetBytes(responseMsg);
                     await networkStream.WriteAsync(acknowledgementBytes, 0, acknowledgementBytes.Length);
-                    Log.Information("\n Sent: {0} \n", responseMsg);
+                    Log.Information("Sent: {0}", responseMsg);
                 }
-            }
-            catch (Exception ex)
-            {
-                Log.Error("Client socket exception: {0}", ex.Message);
             }
             finally
             {

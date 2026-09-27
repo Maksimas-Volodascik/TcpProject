@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -65,7 +66,7 @@ namespace TcpListenerProject.Processing
             }
             catch
             {
-                return null;   
+                throw;
             }
         }
     }
