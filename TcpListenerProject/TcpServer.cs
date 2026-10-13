@@ -2,23 +2,16 @@
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using Serilog.Context;
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Configuration;
-using System.Linq;
 using System.Net;
-using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using TcpListenerProject.Logging;
 using TcpListenerProject.Processing;
-using TcpListenerProject.TeltonikaDataParser;
+using TcpListenerProject.Shared;
 using TcpListenerProject.TeltonikaDataParser.Interfaces;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace TcpListenerProject
 {
@@ -29,16 +22,17 @@ namespace TcpListenerProject
         private readonly ConcurrentDictionary<string, int> _connectionCounts = new();
         private readonly ConcurrentDictionary<string, (int Count, DateTime WindowStart)> _messageLimit = new();
         private readonly TcpListener _listener;
-        private readonly LogQueue _queue;
         private const int MaxConnectionsPerIp = 3;
         private const int MaxMessagesPerDevice = 3;
+        private readonly IPNetwork[] allowedCidrs;
 
         public TcpServer(IServiceScopeFactory scopeFactory, ITeltonikaParser teltonikaParser, LogQueue queue)
         {
+
             _scopeFactory = scopeFactory;
             _teltonikaParser = teltonikaParser;
-            _queue = queue;
-            
+            allowedCidrs = CidrParser.Parse(ConfigurationManager.AppSettings["allowedCIDR"]);
+
             Int32 port;
             IPAddress ipAddress;
 
@@ -53,6 +47,7 @@ namespace TcpListenerProject
             }
             Console.WriteLine("Setting IP: {0}:{1}...", ipAddress, port);
             _listener = new TcpListener(ipAddress, port);
+
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -68,6 +63,14 @@ namespace TcpListenerProject
                     TcpClient client = await _listener.AcceptTcpClientAsync();
 
                     string ip = ((IPEndPoint)client.Client.RemoteEndPoint!).Address.ToString();
+
+                    Console.WriteLine($"{ip} connecting...");
+                    if (!allowedCidrs.Any(net => net.Contains(IPAddress.Parse(ip))))
+                    {
+                        Console.WriteLine("Invalid IP connected");
+                        client.Close();
+                        continue;
+                    }
 
                     int current = _connectionCounts.AddOrUpdate(ip, 1, (_, count) => count + 1);
 
